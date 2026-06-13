@@ -8,12 +8,15 @@ export const createRedisConnection = (): Redis => {
   const redisHost = process.env.REDIS_HOST || 'localhost';
   const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
 
-  const redis = new Redis({
-    host: redisHost,
-    port: redisPort,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-  });
+  const redisPassword = process.env.REDIS_PASSWORD;
+
+const redis = new Redis({
+  host: redisHost,
+  port: redisPort,
+  password: redisPassword,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+});
 
   redis.on('connect', () => {
     console.log(`✅ Redis connected successfully on ${redisHost}:${redisPort}`);
