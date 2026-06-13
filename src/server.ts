@@ -2,7 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import emailRoutes from './routes/email.routes';
-import { emailWorker } from './workers/email.worker';
+import './workers/email.worker';
 import scheduleRoutes from "./routes/schedule.routes";
 
 // Load environment variables
