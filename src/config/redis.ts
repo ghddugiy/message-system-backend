@@ -14,6 +14,7 @@ const redis = new Redis({
   host: redisHost,
   port: redisPort,
   password: redisPassword,
+  tls: {},
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
