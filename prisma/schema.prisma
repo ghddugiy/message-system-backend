@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model ScheduledMessage {
+  id             String        @id @default(cuid())
+  recipientEmail String
+  subject        String
+  message        String
+  scheduledAt    DateTime
+  status         MessageStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
