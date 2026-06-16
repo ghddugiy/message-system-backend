@@ -47,9 +47,25 @@ export const scheduleEmail = async (
     /**
      * Convert datetime
      */
-    const localDate = new Date(
-      scheduledAt.replace(" ", "T")
-    );
+     const [datePart, timePart] =
+  scheduledAt.split(" ");
+
+const [year, month, day] =
+  datePart.split("-").map(Number);
+
+const [hour, minute, second] =
+  timePart.split(":").map(Number);
+
+const localDate = new Date(
+  Date.UTC(
+    year,
+    month - 1,
+    day,
+    hour - 5,
+    minute - 30,
+    second || 0
+  )
+);
 
     console.log(
       "📅 Parsed Date:",
