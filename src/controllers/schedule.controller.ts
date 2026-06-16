@@ -37,11 +37,38 @@ export const scheduleEmail = async (
     }
 
     /**
-     * Convert local datetime correctly
-     * Prevent UTC timezone conversion issue
+     * DEBUG LOGS
+     */
+    console.log(
+      "📥 RAW scheduledAt:",
+      scheduledAt
+    );
+
+    /**
+     * Convert datetime
      */
     const localDate = new Date(
       scheduledAt.replace(" ", "T")
+    );
+
+    console.log(
+      "📅 Parsed Date:",
+      localDate
+    );
+
+    console.log(
+      "📅 Parsed ISO:",
+      localDate.toISOString()
+    );
+
+    console.log(
+      "📅 Current Server Time:",
+      new Date()
+    );
+
+    console.log(
+      "📅 Current Server ISO:",
+      new Date().toISOString()
     );
 
     /**
@@ -53,9 +80,7 @@ export const scheduleEmail = async (
           recipientEmail,
           subject,
           message,
-
           scheduledAt: localDate,
-
           status: "PENDING",
         },
       });
@@ -88,7 +113,6 @@ export const scheduleEmail = async (
     res.status(201).json({
       success: true,
       message: "Email scheduled successfully",
-
       data: scheduledMessage,
     });
   } catch (error) {
