@@ -39,7 +39,7 @@ export class EmailService {
       );
 
       const { data, error } = await resend.emails.send({
-        from: "TimeDrop <onboarding@resend.dev>",
+        from: "TimeDrop <noreply@yourdomain.com>",
         to: recipientEmail,
         subject,
         html: this.generateEmailTemplate(
