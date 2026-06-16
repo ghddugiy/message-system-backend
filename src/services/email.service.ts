@@ -1,17 +1,44 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { Resend } from "resend";
-
-/**
- * Resend Client
- */
-const resend = new Resend(process.env.RESEND_API_KEY);
+import nodemailer from "nodemailer";
 
 /**
  * Email Service
  */
 export class EmailService {
+  private transporter: nodemailer.Transporter;
+
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    this.verifyConnection();
+  }
+
+  /**
+   * Verify Gmail SMTP Connection
+   */
+  private async verifyConnection(): Promise<void> {
+    try {
+      await this.transporter.verify();
+
+      console.log(
+        "✅ Gmail SMTP connected successfully"
+      );
+    } catch (error) {
+      console.error(
+        "❌ Gmail SMTP connection failed:",
+        error
+      );
+    }
+  }
+
   /**
    * Send Email
    */
@@ -25,40 +52,30 @@ export class EmailService {
     error?: string;
   }> {
     try {
-      if (!process.env.RESEND_API_KEY) {
+      if (
+        !process.env.GMAIL_USER ||
+        !process.env.GMAIL_APP_PASSWORD
+      ) {
         throw new Error(
-          "Missing RESEND_API_KEY environment variable"
+          "Missing GMAIL_USER or GMAIL_APP_PASSWORD"
         );
       }
-
-      console.log("📧 Sending email to:", recipientEmail);
 
       console.log(
-        "🔑 RESEND KEY EXISTS:",
-        !!process.env.RESEND_API_KEY
+        "📧 Sending email to:",
+        recipientEmail
       );
 
-      const { data, error } = await resend.emails.send({
-        from: "TimeDrop <noreply@yourdomain.com>",
-        to: recipientEmail,
-        subject,
-        html: this.generateEmailTemplate(
+      const info =
+        await this.transporter.sendMail({
+          from: `"TimeDrop" <${process.env.GMAIL_USER}>`,
+          to: recipientEmail,
           subject,
-          message
-        ),
-      });
-
-      if (error) {
-        console.error(
-          "❌ RESEND API ERROR:",
-          error
-        );
-
-        return {
-          success: false,
-          error: JSON.stringify(error),
-        };
-      }
+          html: this.generateEmailTemplate(
+            subject,
+            message
+          ),
+        });
 
       console.log(
         "✅ EMAIL SENT SUCCESSFULLY"
@@ -66,12 +83,12 @@ export class EmailService {
 
       console.log(
         "📩 MESSAGE ID:",
-        data?.id
+        info.messageId
       );
 
       return {
         success: true,
-        messageId: data?.id,
+        messageId: info.messageId,
       };
     } catch (error) {
       console.error(
