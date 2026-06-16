@@ -6,9 +6,7 @@ import { Resend } from "resend";
 /**
  * Resend Client
  */
-const resend = new Resend(
-  process.env.RESEND_API_KEY
-);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Email Service
@@ -27,34 +25,40 @@ export class EmailService {
     error?: string;
   }> {
     try {
-      /**
-       * Check ENV variable
-       */
       if (!process.env.RESEND_API_KEY) {
         throw new Error(
-          "❌ Missing RESEND_API_KEY in environment variables"
+          "Missing RESEND_API_KEY environment variable"
         );
       }
 
+      console.log("📧 Sending email to:", recipientEmail);
+
       console.log(
-        "📧 Sending email to:",
-        recipientEmail
+        "🔑 RESEND KEY EXISTS:",
+        !!process.env.RESEND_API_KEY
       );
 
-      const response =
-        await resend.emails.send({
-          from:
-            "TimeDrop <onboarding@resend.dev>",
-
-          to: recipientEmail,
-
+      const { data, error } = await resend.emails.send({
+        from: "TimeDrop <onboarding@resend.dev>",
+        to: recipientEmail,
+        subject,
+        html: this.generateEmailTemplate(
           subject,
+          message
+        ),
+      });
 
-          html: this.generateEmailTemplate(
-            subject,
-            message
-          ),
-        });
+      if (error) {
+        console.error(
+          "❌ RESEND API ERROR:",
+          error
+        );
+
+        return {
+          success: false,
+          error: JSON.stringify(error),
+        };
+      }
 
       console.log(
         "✅ EMAIL SENT SUCCESSFULLY"
@@ -62,12 +66,12 @@ export class EmailService {
 
       console.log(
         "📩 MESSAGE ID:",
-        response.data?.id
+        data?.id
       );
 
       return {
         success: true,
-        messageId: response.data?.id,
+        messageId: data?.id,
       };
     } catch (error) {
       console.error(
@@ -110,30 +114,27 @@ export class EmailService {
             text-align: center;
           "
         >
-          <h1 style="color: white; margin:0;">
+          <h1 style="color:white;margin:0;">
             ⏳ TimeDrop
           </h1>
 
           <p
             style="
-              color: rgba(255,255,255,0.8);
-              margin-top: 8px;
+              color:rgba(255,255,255,0.8);
+              margin-top:8px;
             "
           >
             Send messages across time
           </p>
         </div>
 
-        <div style="padding: 24px;">
-          <h2 style="color:#111827;">
-            ${subject}
-          </h2>
+        <div style="padding:24px;">
+          <h2>${subject}</h2>
 
           <p
             style="
-              color:#374151;
-              line-height:1.8;
               white-space:pre-wrap;
+              line-height:1.8;
             "
           >
             ${message}
@@ -144,9 +145,9 @@ export class EmailService {
           style="
             padding:16px;
             text-align:center;
+            border-top:1px solid #e5e7eb;
             font-size:12px;
             color:#9ca3af;
-            border-top:1px solid #e5e7eb;
           "
         >
           Scheduled with TimeDrop
