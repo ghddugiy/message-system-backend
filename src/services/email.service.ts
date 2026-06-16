@@ -1,44 +1,19 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+/**
+ * Resend Client
+ */
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
 /**
  * Email Service
  */
 export class EmailService {
-  private transporter: nodemailer.Transporter;
-
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-
-    this.verifyConnection();
-  }
-
-  /**
-   * Verify Gmail SMTP Connection
-   */
-  private async verifyConnection(): Promise<void> {
-    try {
-      await this.transporter.verify();
-
-      console.log(
-        "✅ Gmail SMTP connected successfully"
-      );
-    } catch (error) {
-      console.error(
-        "❌ Gmail SMTP connection failed:",
-        error
-      );
-    }
-  }
-
   /**
    * Send Email
    */
@@ -52,12 +27,9 @@ export class EmailService {
     error?: string;
   }> {
     try {
-      if (
-        !process.env.GMAIL_USER ||
-        !process.env.GMAIL_APP_PASSWORD
-      ) {
+      if (!process.env.RESEND_API_KEY) {
         throw new Error(
-          "Missing GMAIL_USER or GMAIL_APP_PASSWORD"
+          "Missing RESEND_API_KEY environment variable"
         );
       }
 
@@ -66,16 +38,32 @@ export class EmailService {
         recipientEmail
       );
 
-      const info =
-        await this.transporter.sendMail({
-          from: `"TimeDrop" <${process.env.GMAIL_USER}>`,
+      const { data, error } =
+        await resend.emails.send({
+          from:
+            "TimeDrop <onboarding@resend.dev>",
+
           to: recipientEmail,
+
           subject,
+
           html: this.generateEmailTemplate(
             subject,
             message
           ),
         });
+
+      if (error) {
+        console.error(
+          "❌ RESEND API ERROR:",
+          error
+        );
+
+        return {
+          success: false,
+          error: JSON.stringify(error),
+        };
+      }
 
       console.log(
         "✅ EMAIL SENT SUCCESSFULLY"
@@ -83,12 +71,12 @@ export class EmailService {
 
       console.log(
         "📩 MESSAGE ID:",
-        info.messageId
+        data?.id
       );
 
       return {
         success: true,
-        messageId: info.messageId,
+        messageId: data?.id,
       };
     } catch (error) {
       console.error(
