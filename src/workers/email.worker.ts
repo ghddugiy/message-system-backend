@@ -29,14 +29,28 @@ export const createEmailWorker = (): Worker<EmailJobData> => {
       );
 
       try {
-        // Send Email
-        await emailService.sendEmail(
+        /**
+         * Send email
+         */
+        const result = await emailService.sendEmail(
           recipientEmail,
           subject,
           message
         );
 
-        // Update DB status
+        /**
+         * If email sending failed,
+         * throw error so BullMQ marks job as failed
+         */
+        if (!result.success) {
+          throw new Error(
+            result.error || "Email sending failed"
+          );
+        }
+
+        /**
+         * Update DB status
+         */
         await prisma.scheduledMessage.update({
           where: {
             id: messageId,
@@ -52,6 +66,7 @@ export const createEmailWorker = (): Worker<EmailJobData> => {
 
         return {
           success: true,
+          messageId: result.messageId,
         };
       } catch (error) {
         console.error(
@@ -59,7 +74,9 @@ export const createEmailWorker = (): Worker<EmailJobData> => {
           error
         );
 
-        // Update DB status
+        /**
+         * Update DB status
+         */
         await prisma.scheduledMessage.update({
           where: {
             id: messageId,
@@ -86,9 +103,8 @@ export const createEmailWorker = (): Worker<EmailJobData> => {
   );
 
   /**
-   * Events
+   * Worker Events
    */
-
   emailWorker.on("completed", (job) => {
     console.log(`✅ Job ${job.id} completed`);
   });
