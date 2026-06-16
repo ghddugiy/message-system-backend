@@ -1,57 +1,19 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+/**
+ * Resend Client
+ */
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
 /**
  * Email Service
  */
 export class EmailService {
-  private transporter: nodemailer.Transporter;
-
-  constructor() {
-    this.transporter = this.createTransporter();
-
-    // Verify transporter on startup
-    this.verifyConnection();
-  }
-
-  /**
-   * Create Gmail Transporter
-   */
-  private createTransporter(): nodemailer.Transporter {
-    return nodemailer.createTransport({
-      service: "gmail",
-
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-  }
-
-  /**
-   * Verify Gmail SMTP Connection
-   */
-  async verifyConnection(): Promise<boolean> {
-    try {
-      await this.transporter.verify();
-
-      console.log(
-        "✅ Gmail SMTP connected successfully"
-      );
-
-      return true;
-    } catch (error) {
-      console.error(
-        "❌ Gmail SMTP verification failed:",
-        error
-      );
-
-      return false;
-    }
-  }
-
   /**
    * Send Email
    */
@@ -66,14 +28,11 @@ export class EmailService {
   }> {
     try {
       /**
-       * Check ENV variables
+       * Check ENV variable
        */
-      if (
-        !process.env.GMAIL_USER ||
-        !process.env.GMAIL_APP_PASSWORD
-      ) {
+      if (!process.env.RESEND_API_KEY) {
         throw new Error(
-          "❌ Missing Gmail credentials in .env"
+          "❌ Missing RESEND_API_KEY in environment variables"
         );
       }
 
@@ -82,39 +41,37 @@ export class EmailService {
         recipientEmail
       );
 
-      /**
-       * Send Mail
-       */
-      const info = await this.transporter.sendMail({
-        from: `"TimeDrop" <${process.env.GMAIL_USER}>`,
+      const response =
+        await resend.emails.send({
+          from:
+            "TimeDrop <onboarding@resend.dev>",
 
-        to: recipientEmail,
+          to: recipientEmail,
 
-        subject,
-
-        text: message,
-
-        html: this.generateEmailTemplate(
           subject,
-          message
-        ),
-      });
+
+          html: this.generateEmailTemplate(
+            subject,
+            message
+          ),
+        });
 
       console.log(
-        `✅ EMAIL SENT SUCCESSFULLY`
+        "✅ EMAIL SENT SUCCESSFULLY"
       );
 
       console.log(
-        `📩 MESSAGE ID: ${info.messageId}`
+        "📩 MESSAGE ID:",
+        response.data?.id
       );
 
       return {
         success: true,
-        messageId: info.messageId,
+        messageId: response.data?.id,
       };
     } catch (error) {
       console.error(
-        `❌ EMAIL SEND ERROR:`,
+        "❌ EMAIL SEND ERROR:",
         error
       );
 
